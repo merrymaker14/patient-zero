@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <title>Нулевой пациент</title>
+  <!-- Критический стиль — инлайном: до загрузки основного CSS страница обязана
+       быть тёмным экраном загрузки, а не голой разметкой (FOUC). Разметка
+       прячется целиком и открывается кодом по первому кадру игры.
+       Сообщение об отказе WebGL (#boot-fail) — тоже здесь: основной CSS к
+       этому моменту мог не доехать. Пульсирующая точка при отказе гаснет,
+       иначе текст «не удалось» спорит с анимацией «ещё грузится»; контракт —
+       только hidden=false у #boot-fail. Внутри <style> комментариев нет
+       намеренно: экстрактор словаря берёт кириллицу между тегами. -->
+  <style>
+    html, body { margin: 0; height: 100%; background: #06080f; overflow: hidden; }
+    #app { visibility: hidden; }
+    #boot {
+      position: fixed; inset: 0; z-index: 999; background: #06080f;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #boot .dot {
+      width: 18px; height: 18px; border-radius: 50%; background: #52ff3c;
+      box-shadow: 0 0 24px rgba(82, 255, 60, 0.7);
+      animation: boot-pulse 1s ease-in-out infinite;
+    }
+    @keyframes boot-pulse {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.6); opacity: 1; }
+    }
+    #boot-fail {
+      position: absolute; left: 24px; right: 24px; top: 50%; margin-top: 36px;
+      text-align: center; color: #d8e6d8; font: 16px/1.5 'Segoe UI', Roboto, Arial, sans-serif;
+    }
+    #boot-fail[hidden] { display: none; }
+    #boot:has(#boot-fail:not([hidden])) .dot { display: none; }
+  </style>
+  <script>window.__LANGS=["en"];window.__CLOUD_KEYS=["pz_save"];window.__LOCAL_KEYS=["pz_lang","pz_sound_off"];</script>
+<script src="./libs/vk-bridge.min.js"></script>
+<script>window.__PLATFORM__='vkok';</script>
+<script src="./libs/vkok-boot.js"></script>
+  <script type="module" crossorigin src="./assets/index-SrvsSnCl.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-C0pNh1ad.css">
+</head>
+<body>
+  <!-- Экран загрузки озвучен для скринридера (раньше был aria-hidden — пустота).
+       #boot-fail показывает код, если WebGLRenderer не создался: без него игрок
+       видел вечную пульсирующую точку без объяснений. -->
+  <div id="boot" role="status" aria-live="polite" aria-label="Загрузка…">
+    <div class="dot"></div>
+    <div id="boot-fail" hidden>Не удалось запустить 3D-графику. Обновите браузер или включите WebGL.</div>
+  </div>
+  <div id="app">
+    <canvas id="game"></canvas>
+
+    <!-- HUD боя. Текст лежит в разметке намеренно: его переводит общий обход
+         разметки (translateDom), отдельной ветки перевода не нужно. -->
+    <div id="hud" class="screen" hidden>
+      <div class="hud-top">
+        <div class="hud-block">
+          <div class="hud-label"><span id="city-name"></span></div>
+          <div class="bar infect" role="progressbar" aria-label="Заражение города" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="infect-fill"></div></div>
+          <div class="hud-sub"><span id="infect-pct">0%</span> <span>заражено</span> · <span>орда:</span> <span id="horde">0</span></div>
+          <div id="clock" class="hud-sub clock"></div>
+        </div>
+        <div class="hud-block right">
+          <div class="bar hp" role="progressbar" aria-label="Здоровье" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><div id="hp-fill"></div></div>
+          <div class="hud-sub dna"><span>ДНК:</span> <span id="dna">0</span></div>
+        </div>
+      </div>
+      <!-- Миникарта и стрелка — чистая графика: скринридеру тут читать нечего
+           («чёрный треугольник вверх» пользы не несёт). -->
+      <canvas id="minimap" width="132" height="132" aria-hidden="true"></canvas>
+      <button id="btn-pause" class="icon-btn" aria-label="Пауза">II</button>
+      <div id="hint" class="hint" hidden></div>
+      <!-- Мобильное управление: левая половина — джойстик, справа — действия. -->
+      <button id="btn-outbreak" class="outbreak ad-glow">Вспышка (реклама)</button>
+      <!-- Чутьё вируса: стрелка к последним не заражённым. Символ, не текст. -->
+      <div id="sense" hidden aria-hidden="true">▲</div>
+      <div id="stick" class="stick" hidden><div id="stick-nub"></div></div>
+      <div id="touch-btns" class="touch-btns" hidden>
+        <button id="btn-bite" class="act-btn bite">Укус</button>
+        <button id="btn-car" class="act-btn" hidden>Машина</button>
+      </div>
+    </div>
+
+    <!-- Титул -->
+    <div id="title" class="screen menu">
+      <div class="panel">
+        <h1>НУЛЕВОЙ ПАЦИЕНТ</h1>
+        <p class="tagline">Лаборатория осталась позади. Впереди — весь мир.</p>
+        <!-- Абзац одной строкой намеренно: перенос в разметке попадает в текст
+             узла, хеш меняется и перевод не находится. -->
+        <p class="story">Ты — первый заражённый. Кусай прохожих, угоняй машины, уходи от полиции. Каждый укушенный встанет в твою орду. Город падёт — дальше следующий.</p>
+        <!-- Прогресс кампании: заполняет UI.titleProgress(), новичку скрыт. -->
+        <p id="title-progress" class="progress" hidden></p>
+        <button id="btn-play" class="big">Начать заражение</button>
+        <button id="btn-continue" class="big" hidden>Продолжить</button>
+        <div class="row">
+          <button id="btn-lang" class="small lang-btn">Язык: русский</button>
+          <button id="btn-sound" class="small sound-btn">Звук: вкл</button>
+        </div>
+        <p class="keys" id="keys-hint">WASD — движение, мышь — камера, Пробел — укус, E — машина</p>
+        <!-- Сенсорная раскладка: на телефоне подсказка про клавиши бесполезна,
+             а как двигаться — не написано было нигде. -->
+        <p class="keys" id="touch-hint" hidden>Левая половина экрана — ходьба, правая — камера, кнопки — укус и машина</p>
+      </div>
+    </div>
+
+    <!-- Пауза -->
+    <div id="pause" class="screen menu" hidden>
+      <div class="panel">
+        <h2>Пауза</h2>
+        <button id="btn-resume" class="big">Продолжить</button>
+        <button id="btn-retry-pause" class="big">Начать город заново</button>
+        <div class="row">
+          <button id="btn-lang2" class="small lang-btn">Язык: русский</button>
+          <button id="btn-sound2" class="small sound-btn">Звук: вкл</button>
+        </div>
+        <button id="btn-quit" class="small">В главное меню</button>
+      </div>
+    </div>
+
+    <!-- Гибель -->
+    <div id="dead" class="screen menu" hidden>
+      <div class="panel">
+        <h2>Вас нейтрализовали</h2>
+        <p id="dead-stats" class="story"></p>
+        <button id="btn-revive" class="big ad">Мутировать и встать (реклама)</button>
+        <button id="btn-retry" class="big">Начать город заново</button>
+        <!-- Выход в меню, язык и звук — с каждого финального экрана: раньше
+             отсюда можно было только перезапустить город (замечание ВК
+             «возможность выхода из разных режимов в меню»). -->
+        <div class="row">
+          <button id="btn-lang3" class="small lang-btn">Язык: русский</button>
+          <button id="btn-sound3" class="small sound-btn">Звук: вкл</button>
+        </div>
+        <button id="btn-quit-dead" class="small">В главное меню</button>
+      </div>
+    </div>
+
+    <!-- Город пал -->
+    <div id="citywin" class="screen menu" hidden>
+      <div class="panel">
+        <h2>ГОРОД ПАЛ</h2>
+        <p id="win-stats" class="story"></p>
+        <button id="btn-dna2" class="big ad">Удвоить ДНК (реклама)</button>
+        <!-- Баланс над магазином: иначе игрок не видит, сколько у него ДНК,
+             пока выбирает мутацию. Заполняет UI.shopBalance(). -->
+        <div id="shop-dna" class="hud-sub dna"></div>
+        <div id="shop" class="shop"></div>
+        <button id="btn-next" class="big">Следующий город</button>
+        <button id="btn-quit-citywin" class="small">В главное меню</button>
+      </div>
+    </div>
+
+    <!-- Победа -->
+    <div id="victory" class="screen menu" hidden>
+      <div class="panel">
+        <h2>МИР ЗАРАЖЁН</h2>
+        <p class="story">Последний город замолчал. То, что началось с одного укуса, стало новой природой человечества. Ты был первым — и теперь вас все.</p>
+        <p id="victory-stats" class="story"></p>
+        <button id="btn-again" class="big">Начать новую пандемию</button>
+        <div class="row">
+          <button id="btn-lang4" class="small lang-btn">Язык: русский</button>
+          <button id="btn-sound4" class="small sound-btn">Звук: вкл</button>
+        </div>
+        <button id="btn-quit-victory" class="small">В главное меню</button>
+      </div>
+    </div>
+
+    <!-- Слои ощущений: виньетка урона, зелёная вспышка вируса, заставка
+         города, всплывающие числа ДНК. Все — чистая косметика поверх WebGL. -->
+    <div id="vignette"></div>
+    <div id="flash"></div>
+    <div id="city-banner" hidden>
+      <div id="city-banner-name"></div>
+      <div id="city-banner-goal"></div>
+      <div id="city-banner-flavor"></div>
+    </div>
+    <!-- Стадии эпидемии: «ЭПИДЕМИЯ», «ГОРОД В ПАНИКЕ», «ХАОС». Заполняет UI.stageBanner(). -->
+    <div id="stage-banner" hidden>
+      <div id="stage-banner-name"></div>
+      <div id="stage-banner-sub"></div>
+    </div>
+    <div id="float-layer"></div>
+    <!-- role=status: тосты озвучиваются скринридером, не перехватывая фокус. -->
+    <div id="toast" role="status" aria-live="polite" hidden></div>
+  </div>
+</body>
+</html>
