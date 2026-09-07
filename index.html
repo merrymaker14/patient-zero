@@ -39,8 +39,8 @@
 <script src="./libs/vk-bridge.min.js"></script>
 <script>window.__PLATFORM__='vkok';</script>
 <script src="./libs/vkok-boot.js"></script>
-  <script type="module" crossorigin src="./assets/index-By4IYz0-.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-C0pNh1ad.css">
+  <script type="module" crossorigin src="./assets/index-DW7liA00.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-CEvmnOZd.css">
 </head>
 <body>
   <!-- Экран загрузки озвучен для скринридера (раньше был aria-hidden — пустота).
@@ -62,6 +62,10 @@
           <div class="bar infect" role="progressbar" aria-label="Заражение города" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="infect-fill"></div></div>
           <div class="hud-sub"><span id="infect-pct">0%</span> <span>заражено</span> · <span>орда:</span> <span id="horde">0</span></div>
           <div id="clock" class="hud-sub clock"></div>
+          <!-- Побочные цели города: заполняет UI.goals(). -->
+          <div id="goals" class="goals"></div>
+          <!-- Оферта на последней минуте: минута отсрочки армии за ролик. -->
+          <button id="btn-delay" class="delay ad-glow" hidden>Задержать армию: +60 с (реклама)</button>
         </div>
         <div class="hud-block right">
           <div class="bar hp" role="progressbar" aria-label="Здоровье" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><div id="hp-fill"></div></div>
@@ -96,6 +100,11 @@
         <p id="title-progress" class="progress" hidden></p>
         <button id="btn-play" class="big">Начать заражение</button>
         <button id="btn-continue" class="big" hidden>Продолжить</button>
+        <!-- Бонус дня: раз в сутки, даром или втрое за ролик. Показывает UI.dailyButtons(). -->
+        <div id="daily" class="row" hidden>
+          <button id="btn-daily" class="small daily">Бонус дня: +30 ДНК</button>
+          <button id="btn-daily-ad" class="small daily ad">Бонус дня: +90 ДНК (реклама)</button>
+        </div>
         <div class="row">
           <button id="btn-lang" class="small lang-btn">Язык: русский</button>
           <button id="btn-sound" class="small sound-btn">Звук: вкл</button>
@@ -144,13 +153,17 @@
       <div class="panel">
         <h2>ГОРОД ПАЛ</h2>
         <p id="win-stats" class="story"></p>
+        <p id="win-record" class="record" hidden></p>
         <button id="btn-dna2" class="big ad">Удвоить ДНК (реклама)</button>
         <!-- Баланс над магазином: иначе игрок не видит, сколько у него ДНК,
              пока выбирает мутацию. Заполняет UI.shopBalance(). -->
         <div id="shop-dna" class="hud-sub dna"></div>
         <div id="shop" class="shop"></div>
         <button id="btn-next" class="big">Следующий город</button>
-        <button id="btn-quit-citywin" class="small">В главное меню</button>
+        <div class="row">
+          <button id="btn-share" class="small" hidden>Поделиться</button>
+          <button id="btn-quit-citywin" class="small">В главное меню</button>
+        </div>
       </div>
     </div>
 
@@ -161,6 +174,7 @@
         <p class="story">Последний город замолчал. То, что началось с одного укуса, стало новой природой человечества. Ты был первым — и теперь вас все.</p>
         <p id="victory-stats" class="story"></p>
         <button id="btn-again" class="big">Начать новую пандемию</button>
+        <button id="btn-share2" class="small" hidden>Поделиться</button>
         <div class="row">
           <button id="btn-lang4" class="small lang-btn">Язык: русский</button>
           <button id="btn-sound4" class="small sound-btn">Звук: вкл</button>
