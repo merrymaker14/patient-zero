@@ -39,8 +39,8 @@
 <script src="./libs/vk-bridge.min.js"></script>
 <script>window.__PLATFORM__='vkok';</script>
 <script src="./libs/vkok-boot.js"></script>
-  <script type="module" crossorigin src="./assets/index-DW7liA00.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-CEvmnOZd.css">
+  <script type="module" crossorigin src="./assets/index-uUhiRgKJ.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-ChhZD8Dt.css">
 </head>
 <body>
   <!-- Экран загрузки озвучен для скринридера (раньше был aria-hidden — пустота).
@@ -75,7 +75,14 @@
       <!-- Миникарта и стрелка — чистая графика: скринридеру тут читать нечего
            («чёрный треугольник вверх» пользы не несёт). -->
       <canvas id="minimap" width="132" height="132" aria-hidden="true"></canvas>
-      <button id="btn-pause" class="icon-btn" aria-label="Пауза">II</button>
+      <!-- Выход из боя в меню. Кнопка подписана словом и светится зелёным
+           намеренно: кружок с «II» тёмным по тёмному городу не находили
+           (правила ВК 3.4.2 — активные элементы должны быть хорошо заметны,
+           4.2.10 — вернуться в главное меню можно в любой момент). -->
+      <button id="btn-pause" class="menu-btn" aria-label="Пауза и выход в меню">
+        <span class="pause-ico" aria-hidden="true"></span>
+        <span>Меню</span>
+      </button>
       <div id="hint" class="hint" hidden></div>
       <!-- Мобильное управление: левая половина — джойстик, справа — действия. -->
       <button id="btn-outbreak" class="outbreak ad-glow">Вспышка (реклама)</button>
@@ -98,6 +105,9 @@
         <p class="story">Ты — первый заражённый. Кусай прохожих, угоняй машины, уходи от полиции. Каждый укушенный встанет в твою орду. Город падёт — дальше следующий.</p>
         <!-- Прогресс кампании: заполняет UI.titleProgress(), новичку скрыт. -->
         <p id="title-progress" class="progress" hidden></p>
+        <!-- Где лежит прохождение: на площадке — в аккаунте игрока, и его
+             можно продолжить с другого устройства. Показывает UI.cloudNote(). -->
+        <p id="cloud-note" class="cloud-note" hidden>Прогресс сохраняется в вашем аккаунте — продолжить можно на любом устройстве</p>
         <button id="btn-play" class="big">Начать заражение</button>
         <button id="btn-continue" class="big" hidden>Продолжить</button>
         <!-- Бонус дня: раз в сутки, даром или втрое за ролик. Показывает UI.dailyButtons(). -->
@@ -109,10 +119,12 @@
           <button id="btn-lang" class="small lang-btn">Язык: русский</button>
           <button id="btn-sound" class="small sound-btn">Звук: вкл</button>
         </div>
-        <p class="keys" id="keys-hint">WASD — движение, мышь — камера, Пробел — укус, E — машина</p>
+        <!-- Про «Меню» и Esc сказано прямо: выход из города в главное меню
+             игрок должен находить, не гадая (правила ВК 3.4.2 и 4.2.10). -->
+        <p class="keys" id="keys-hint">WASD — движение, мышь — камера, Пробел — укус, E — машина, Esc — пауза и выход в меню</p>
         <!-- Сенсорная раскладка: на телефоне подсказка про клавиши бесполезна,
              а как двигаться — не написано было нигде. -->
-        <p class="keys" id="touch-hint" hidden>Левая половина экрана — ходьба, правая — камера, кнопки — укус и машина</p>
+        <p class="keys" id="touch-hint" hidden>Левая половина экрана — ходьба, правая — камера, кнопки — укус и машина, «Меню» сверху — пауза и выход</p>
       </div>
     </div>
 
@@ -121,12 +133,14 @@
       <div class="panel">
         <h2>Пауза</h2>
         <button id="btn-resume" class="big">Продолжить</button>
-        <button id="btn-retry-pause" class="big">Начать город заново</button>
+        <!-- Выход в меню — крупной кнопкой сразу под «Продолжить»: мелкой
+             серой строкой внизу панели его не замечали. -->
+        <button id="btn-quit" class="big ghost">В главное меню</button>
+        <button id="btn-retry-pause" class="big ghost">Начать город заново</button>
         <div class="row">
           <button id="btn-lang2" class="small lang-btn">Язык: русский</button>
           <button id="btn-sound2" class="small sound-btn">Звук: вкл</button>
         </div>
-        <button id="btn-quit" class="small">В главное меню</button>
       </div>
     </div>
 
@@ -139,12 +153,13 @@
         <button id="btn-retry" class="big">Начать город заново</button>
         <!-- Выход в меню, язык и звук — с каждого финального экрана: раньше
              отсюда можно было только перезапустить город (замечание ВК
-             «возможность выхода из разных режимов в меню»). -->
+             «возможность выхода из разных режимов в меню»). Крупной кнопкой,
+             а не строчкой внизу: мелкий выход не замечали и во второй раз. -->
+        <button id="btn-quit-dead" class="big ghost">В главное меню</button>
         <div class="row">
           <button id="btn-lang3" class="small lang-btn">Язык: русский</button>
           <button id="btn-sound3" class="small sound-btn">Звук: вкл</button>
         </div>
-        <button id="btn-quit-dead" class="small">В главное меню</button>
       </div>
     </div>
 
@@ -160,9 +175,9 @@
         <div id="shop-dna" class="hud-sub dna"></div>
         <div id="shop" class="shop"></div>
         <button id="btn-next" class="big">Следующий город</button>
+        <button id="btn-quit-citywin" class="big ghost">В главное меню</button>
         <div class="row">
           <button id="btn-share" class="small" hidden>Поделиться</button>
-          <button id="btn-quit-citywin" class="small">В главное меню</button>
         </div>
       </div>
     </div>
@@ -174,12 +189,12 @@
         <p class="story">Последний город замолчал. То, что началось с одного укуса, стало новой природой человечества. Ты был первым — и теперь вас все.</p>
         <p id="victory-stats" class="story"></p>
         <button id="btn-again" class="big">Начать новую пандемию</button>
+        <button id="btn-quit-victory" class="big ghost">В главное меню</button>
         <button id="btn-share2" class="small" hidden>Поделиться</button>
         <div class="row">
           <button id="btn-lang4" class="small lang-btn">Язык: русский</button>
           <button id="btn-sound4" class="small sound-btn">Звук: вкл</button>
         </div>
-        <button id="btn-quit-victory" class="small">В главное меню</button>
       </div>
     </div>
 
