@@ -39,8 +39,8 @@
 <script src="./libs/vk-bridge.min.js"></script>
 <script>window.__PLATFORM__='vkok';</script>
 <script src="./libs/vkok-boot.js"></script>
-  <script type="module" crossorigin src="./assets/index-uUhiRgKJ.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-ChhZD8Dt.css">
+  <script type="module" crossorigin src="./assets/index-DUgVYx5T.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-HwTpL1Nd.css">
 </head>
 <body>
   <!-- Экран загрузки озвучен для скринридера (раньше был aria-hidden — пустота).
@@ -89,8 +89,11 @@
       <!-- Чутьё вируса: стрелка к последним не заражённым. Символ, не текст. -->
       <div id="sense" hidden aria-hidden="true">▲</div>
       <div id="stick" class="stick" hidden><div id="stick-nub"></div></div>
-      <div id="touch-btns" class="touch-btns" hidden>
-        <button id="btn-bite" class="act-btn bite">Укус</button>
+      <!-- Кнопка укуса видна и на десктопе: модерация ВК не нашла, как
+           кусать мышью с клавиатурой. Под словом — клавиши, только для
+           мышиного экрана (CSS). Кнопка «Машина» — лишь на сенсорном. -->
+      <div id="touch-btns" class="touch-btns">
+        <button id="btn-bite" class="act-btn bite"><span>Укус</span><span class="keycap">Пробел</span></button>
         <button id="btn-car" class="act-btn" hidden>Машина</button>
       </div>
     </div>
@@ -121,7 +124,7 @@
         </div>
         <!-- Про «Меню» и Esc сказано прямо: выход из города в главное меню
              игрок должен находить, не гадая (правила ВК 3.4.2 и 4.2.10). -->
-        <p class="keys" id="keys-hint">WASD — движение, мышь — камера, Пробел — укус, E — машина, Esc — пауза и выход в меню</p>
+        <p class="keys" id="keys-hint">WASD — движение, мышь — камера, Пробел или клик — укус, E — машина, Esc — пауза и выход в меню</p>
         <!-- Сенсорная раскладка: на телефоне подсказка про клавиши бесполезна,
              а как двигаться — не написано было нигде. -->
         <p class="keys" id="touch-hint" hidden>Левая половина экрана — ходьба, правая — камера, кнопки — укус и машина, «Меню» сверху — пауза и выход</p>
@@ -174,8 +177,13 @@
              пока выбирает мутацию. Заполняет UI.shopBalance(). -->
         <div id="shop-dna" class="hud-sub dna"></div>
         <div id="shop" class="shop"></div>
-        <button id="btn-next" class="big">Следующий город</button>
-        <button id="btn-quit-citywin" class="big ghost">В главное меню</button>
+        <!-- «Дальше» и выход — одной парой: на низком экране они встают в ряд,
+             иначе уезжали за нижний край под магазином мутаций, и игрок не
+             видел, как идти к следующему городу. -->
+        <div class="actions">
+          <button id="btn-next" class="big">Следующий город</button>
+          <button id="btn-quit-citywin" class="big ghost">В главное меню</button>
+        </div>
         <div class="row">
           <button id="btn-share" class="small" hidden>Поделиться</button>
         </div>
